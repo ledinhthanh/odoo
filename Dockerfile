@@ -1,10 +1,12 @@
 FROM debian:buster-slim
-MAINTAINER Odoo S.A. <info@odoo.com>
+MAINTAINER LeDinhThanh <mrthanh.ledinh@outlook.com>
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
 ENV LANG C.UTF-8
+
+RUN echo "nameserver 8.8.8.8" >> /etc/resolv.conf
 
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 RUN apt-get update && \
@@ -35,6 +37,10 @@ RUN apt-get update && \
     && echo 'ea8277df4297afc507c61122f3c349af142f31e5 wkhtmltox.deb' | sha1sum -c - \
     && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
+
+RUN pip3 install --upgrade pip
+RUN pip3 install --upgrade --force-reinstall phonenumbers
+RUN pip3 install Twisted Scrapy htmlmin
 
 # install latest postgresql-client
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
@@ -71,7 +77,12 @@ COPY ./odoo.conf /etc/odoo/
 RUN chown odoo /etc/odoo/odoo.conf \
     && mkdir -p /mnt/extra-addons \
     && chown -R odoo /mnt/extra-addons
-VOLUME ["/var/lib/odoo"]
+    
+# Create & Set permissions for backups
+RUN mkdir -p /opt/odoo/backups \
+    && chown -R odoo /opt/odoo
+
+VOLUME ["/var/lib/odoo", "/etc/odoo", "/opt/odoo/backups"]
 
 # Expose Odoo services
 EXPOSE 8069 8071 8072
