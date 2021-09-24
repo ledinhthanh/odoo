@@ -1,12 +1,12 @@
 FROM debian:buster-slim
-MAINTAINER LeDinhThanh <mrthanh.ledinh@outlook.com>
+LABEL MAINTAINER LeDinhThanh <mrthanh.ledinh@outlook.com>
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
 ENV LANG C.UTF-8
 
-RUN echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+# RUN echo "nameserver 8.8.8.8" >> /etc/resolv.conf
 
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 RUN apt-get update && \
@@ -40,7 +40,7 @@ RUN apt-get update && \
 
 RUN pip3 install --upgrade pip
 RUN pip3 install --upgrade --force-reinstall phonenumbers
-RUN pip3 install Twisted Scrapy htmlmin
+# RUN pip3 install Twisted Scrapy htmlmin
 
 # install latest postgresql-client
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
@@ -61,8 +61,8 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 14.0
-ARG ODOO_RELEASE=20210618
-ARG ODOO_SHA=261431b2bcb6d64751560cbd4dd98a9d98863e0c
+ARG ODOO_RELEASE=20210923
+ARG ODOO_SHA=485d9285ff61e5bb63677590915166767c52dff9
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
     && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
     && apt-get update \
@@ -72,6 +72,11 @@ RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/od
 # Copy entrypoint script and Odoo configuration file
 COPY ./entrypoint.sh /
 COPY ./odoo.conf /etc/odoo/
+
+# delete UNUSE module
+RUN rm -rf /usr/lib/python3/dist-packages/odoo/addons/iap
+RUN rm -rf /usr/lib/python3/dist-packages/odoo/addons/sms
+RUN rm -rf /usr/lib/python3/dist-packages/odoo/addons/web_unsplash
 
 # Set permissions and Mount /var/lib/odoo to allow restoring filestore and /mnt/extra-addons for users addons
 RUN chown odoo /etc/odoo/odoo.conf \
